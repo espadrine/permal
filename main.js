@@ -1,54 +1,30 @@
 const util = require('util');
 
 class Rand {
-  constructor(key = 0, size = 10) {
+  constructor(size = 10) {
     this.size = size;
     // Start with a trivial circular permutation
-    this.pools = [[], []];
-    this.pools.forEach((pool, p) => {
-      for (let i = 0; i < size; i++) {
-        pool[i] = (i + p + 1) % size;
-      }
-    });
-    this.i = key;
-  }
-  verify(pool) {
-    let n = 1;
-    for (let i = pool[0]; i !== 0; i = pool[i]) {
-      n++;
+    this.perm = [];
+    this.rand = [];
+    for (let i = 0; i < size; i++) {
+      this.perm[i] = this.rand[i] = i;
     }
-    return n === this.size;
+    this.i = 0;
   }
   gen() {
-    this.switchPermutation(this.pools[0], this.pools[1][this.i]);
-    this.switchPermutation(this.pools[1], this.pools[0][this.i]);
+    // Constraint: a perm must contain all possibilities, so that picking one at
+    // random gives an equiprobable result in the chosen alphabet.
+    // Constraint: must switch this number with a random slot.
+    const a0 = this.i;
+    const a1 = this.rand[this.i];
+    [this.perm[a0], this.perm[a1]] = [this.perm[a1], this.perm[a0]];
+    const next = this.perm[this.i];
+    this.rand[this.i] = (next + a1) % this.size;
     this.i = (this.i + 1) % this.size;
-    const next = this.pools[0][this.pools[1][this.i]];
     return next;
   }
-  // Reorder, but keep a circular permutation.
-  switchPermutation(pool, i) {
-    // Assuming a < b < c < d < e < f < g < h:
-    // a → b    c → d
-    // e → f    g → h
-    const a = pool[i];
-    const c = pool[a];
-    const e = pool[c];
-    const g = pool[e];
-    this.switch(pool, a, e);
-    this.switch(pool, c, g);
-    // a → f    c → h
-    // e → b    g → d
-  }
-  switch(pool, a, e) {
-    // a → b = pool[a]
-    // e → f = pool[e]
-    [pool[a], pool[e]] = [pool[e], pool[a]];
-    // a → f
-    // e → b
-  }
   toString() {
-    return this.pools.map(pool => pool.map(i => String(i)).join(' ')).join('; ');
+    return [this.perm, this.rand].map(list => list.map(i => String(i)).join(' ')).join('; ');
   }
   [util.inspect.custom]() { return `Rand {${this.toString()}} [${this.i}]`; }
 }

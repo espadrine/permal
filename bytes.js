@@ -1,10 +1,18 @@
 const { Rand } = require('./main.js');
+const r = new Rand(256);
 
 // For use by the ent program.
 function writeBytes(n) {
-  const r = new Rand(0, 256);
+  const b = Buffer.alloc(n);
   for (let i = 0; i < n; i++) {
-    process.stdout.write(Buffer.from([r.gen()]));
+    b[i] = r.gen();
   }
+  process.stdout.write(b);
 }
-writeBytes(256000);
+
+// Write 1 MiB, wait half a sec, repeat.
+function writeAndWait() {
+  writeBytes(1048576);
+  setTimeout(writeAndWait, 100);
+}
+writeAndWait();
